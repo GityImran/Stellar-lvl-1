@@ -7,6 +7,7 @@ import { Alert } from "./components/ui/Alert";
 import { Button } from "./components/ui/Button";
 import { Card, CardContent, CardHeader } from "./components/ui/Card";
 import { Input } from "./components/ui/Input";
+import { Modal } from "./components/ui/Modal";
 
 import { connectWallet } from "@/lib/wallet";
 import { getXlmBalance } from "@/lib/balance";
@@ -45,6 +46,13 @@ export default function Home() {
 
   const [history, setHistory] =
     useState<PaymentRecord[]>([]);
+
+  const [txReport, setTxReport] = useState<{
+    hash: string;
+    to: string;
+    amount: string;
+    date: Date;
+  } | null>(null);
 
   const canSend = useMemo(() => {
     return (
@@ -208,6 +216,13 @@ export default function Home() {
       );
 
       setTxHash(result.hash);
+
+      setTxReport({
+        hash: result.hash,
+        to: destination,
+        amount: amount,
+        date: new Date(),
+      });
 
       await refreshBalance(
         walletAddress
@@ -653,26 +668,7 @@ export default function Home() {
 
         )}
 
-        {success && (
 
-          <Alert tone="success">
-
-            <div className="font-bold">
-              {success}
-            </div>
-
-            <a
-              href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              View transaction
-            </a>
-
-          </Alert>
-
-        )}
 
         {error && (
 
@@ -685,6 +681,58 @@ export default function Home() {
         )}
 
       </section>
+
+      <Modal
+        isOpen={!!txReport}
+        onClose={() => setTxReport(null)}
+        title="Transaction Report"
+      >
+        {txReport && (
+          <div className="space-y-6">
+            <div className="flex flex-col items-center justify-center space-y-2 py-4">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 text-emerald-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">Success!</h3>
+              <p className="text-slate-500 font-medium">Your XLM has been sent.</p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-5 space-y-4 border-2 border-slate-100">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold">Amount</span>
+                <span className="text-xl font-black text-slate-900">{txReport.amount} XLM</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold">To</span>
+                <span className="font-mono text-slate-900 font-semibold">{shortAddress(txReport.to)}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold">Date</span>
+                <span className="text-slate-900 font-semibold">{txReport.date.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <a
+              href={`https://stellar.expert/explorer/testnet/tx/${txReport.hash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full flex items-center justify-center p-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors"
+            >
+              View on Block Explorer
+            </a>
+
+            <Button className="w-full" size="lg" onClick={() => setTxReport(null)}>
+              Done
+            </Button>
+          </div>
+        )}
+      </Modal>
 
     </main>
   );
